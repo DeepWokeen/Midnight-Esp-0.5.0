@@ -1135,10 +1135,59 @@ for i,h in ipairs(RadioBarHeights) do
  RadioBarObjects[i]=bar
 end
 local RadioOpen=Instance.new("TextButton") RadioOpen.Name="RadioOpenPlaylist" RadioOpen.BackgroundTransparency=1 RadioOpen.BorderSizePixel=0 RadioOpen.Text="" RadioOpen.Size=UDim2.fromScale(1,1) RadioOpen.ZIndex=15 RadioOpen.Active=true RadioOpen.Parent=RadioPanel
-local RadioPopup=F.newFrame(Sidebar,UDim2.fromOffset(RADIO_WIDTH,278),UDim2.new(0,10,1,-288),Color3.fromRGB(20,16,28),0.03)
+local RadioPopup=F.newFrame(UI,UDim2.fromOffset(RADIO_WIDTH,278),UDim2.fromOffset(0,0),Color3.fromRGB(20,16,28),0.03)
 RadioPopup.Name="RadioPlaylist" RadioPopup.Visible=false RadioPopup.ZIndex=30 RadioPopup.Active=true F.addCorner(RadioPopup,8) F.addStroke(RadioPopup,WHITE,0.78,1)
+-- Keep the popup near the sidebar initially, but let it move independently across the screen.
+task.defer(function()
+ local p=Sidebar.AbsolutePosition
+ local v=workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or Vector2.new(800,600)
+ RadioPopup.Position=UDim2.fromOffset(math.clamp(p.X+10,0,math.max(0,v.X-RADIO_WIDTH)),math.clamp(p.Y+Sidebar.AbsoluteSize.Y-288,0,math.max(0,v.Y-278)))
+end)
 local RadioTitle=F.newLabel(RadioPopup,"♫  MINI RADIO",10,Enum.Font.GothamBold,Color3.fromRGB(236,174,91))
-RadioTitle.Position=UDim2.fromOffset(9,7) RadioTitle.Size=UDim2.new(1,-18,0,15) RadioTitle.ZIndex=31
+RadioTitle.Position=UDim2.fromOffset(9,7) RadioTitle.Size=UDim2.new(1,-42,0,15) RadioTitle.ZIndex=41
+-- Drag the mini-radio by its title bar (mouse or touch).
+RadioTitle.Active=true
+local radioDragActive=false
+local radioDragInput=nil
+local radioDragStart=nil
+local radioStartPosition=nil
+F.connect(RadioTitle.InputBegan,function(input)
+ if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+  radioDragActive=true
+  radioDragStart=input.Position
+  radioStartPosition=RadioPopup.Position
+  radioDragInput=input
+ end
+end)
+F.connect(UserInputService.InputChanged,function(input)
+ if radioDragActive and (input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch) then
+  local delta=input.Position-radioDragStart
+  local camera=workspace.CurrentCamera
+  local viewport=camera and camera.ViewportSize or Vector2.new(800,600)
+  local x=radioStartPosition.X.Offset+delta.X
+  local y=radioStartPosition.Y.Offset+delta.Y
+  RadioPopup.Position=UDim2.fromOffset(math.clamp(x,0,math.max(0,viewport.X-RadioPopup.AbsoluteSize.X)),math.clamp(y,0,math.max(0,viewport.Y-RadioPopup.AbsoluteSize.Y)))
+ end
+end)
+F.connect(UserInputService.InputEnded,function(input)
+ if radioDragActive and (input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch) then
+  radioDragActive=false radioDragInput=nil
+ end
+end)
+-- Explicit close control so the playlist can always be dismissed, even when it covers the sidebar.
+local RadioClose=Instance.new("TextButton")
+RadioClose.Name="RadioClosePlaylist" RadioClose.AnchorPoint=Vector2.new(1,0)
+RadioClose.Position=UDim2.new(1,-6,0,4) RadioClose.Size=UDim2.fromOffset(22,20)
+RadioClose.BackgroundColor3=WHITE RadioClose.BackgroundTransparency=0.88
+RadioClose.BorderSizePixel=0 RadioClose.AutoButtonColor=false
+RadioClose.Font=Enum.Font.GothamBold RadioClose.TextSize=12
+RadioClose.TextColor3=Color3.fromRGB(235,225,235) RadioClose.Text="×"
+RadioClose.ZIndex=40 RadioClose.Parent=RadioPopup
+F.addCorner(RadioClose,5)
+F.connect(RadioClose.Activated,function()
+ RadioPopup.Visible=false
+ F.playToggleSound(false)
+end)
 local RadioStatus=F.newLabel(RadioPopup,"READY",9,Enum.Font.Gotham,Color3.fromRGB(190,178,194))
 RadioStatus.Position=UDim2.fromOffset(9,23) RadioStatus.Size=UDim2.new(1,-18,0,13) RadioStatus.ZIndex=31
 local RadioList=Instance.new("ScrollingFrame") RadioList.Name="TrackList" RadioList.Position=UDim2.fromOffset(7,42) RadioList.Size=UDim2.new(1,-14,1,-150)
@@ -1249,6 +1298,12 @@ local RadioTracks={
  {"Clair de Lune",1838457617},{"Bossa Me",1837768517},{"Happy Adventure",9047876673},{"All Dropping 8 Bit Beats",9048375035},{"Stadium Rave",1846368080},
  {"Raining Tacos",142376088},{"Happy Song",1843404009},{"Town Talk",1845756489},{"Gothic",139488665764275},{"Lo-fi Chill",9043887091},
  {"Roblox Retro Flute",15930255433},{"Tender Tropical House",1836105293},{"Mutronic Plague",1837057495},{"Young And Tender",1842205471},{"Really Fast",1846911135},
+ {"No More",1846458016},{"Dion Timmer - Shiawase",5409360995},{"Noisestorm - Crab Rave",5410086218},{"Menu Theme",114376757380093},{"ERROR 264",140009716850576},
+ {"Seek & Destroy",1845149698},{"Chill Jazz",1845341094},{"Gymnopedie No. 1",9045766377},{"80s Horror Throwback",9041745502},{"Bullet - Skibidi Fanum Tax",16190757458},
+ {"HERE I COME",78534559289195},{"Unnamed Original Old Roblox Song",103502836672744},{"Horror",9039981149},{"Doors Ending Theme",103086632976213},{"Classic Easter",1836009208},
+ {"Halloween Horrors Waltz",1836009626},{"Full Force",1842801942},{"Chaos",1843497734},{"Diamonds",1846575559},{"TOMA FUNK PHONK",129098116998483},
+ {"Riffs From The Garage",1838029228},{"To Slay The Undead A",1846521019},{"To Slay The Undead B",1846521026},{"Choir Before Impact",82787763368776},{"Chimpanzini Bananini Funk",85605144750366},
+ {"Burning Bridges",95961726055283},{"Ballerina Cappuccina x Espressona Signora",96669123922210},{"John Cena Hideous Beast",98013679755954},{"BMW Funk",115712201149548},{"BMW Funk 2",118638380617180},
 }
 local function stopRadio()
  if RadioSound then
@@ -1269,6 +1324,17 @@ local function playRadioTrack(track,index)
  sound.Looped=false
  sound.Parent=SoundService
  RadioSound=sound
+ -- After a track finishes naturally, choose a random different track.
+ sound.Ended:Connect(function()
+  if not alive or RadioSound~=sound then return end
+  local nextIndex=RadioTrackIndex
+  if #RadioTracks>1 then
+   repeat
+    nextIndex=math.random(1,#RadioTracks)
+   until nextIndex~=RadioTrackIndex
+  end
+  playRadioTrack(RadioTracks[nextIndex],nextIndex)
+ end)
  RadioStatus.Text="LOADING • "..track[1]
  task.spawn(function()
   local started=os.clock()
